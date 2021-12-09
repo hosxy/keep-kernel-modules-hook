@@ -1,0 +1,48 @@
+#!/bin/bash -e
+
+kernel_ver=`uname -r`
+kernel_modules_dir="/usr/lib/modules"
+kernel_backup_dir="${kernel_modules_dir}/backup"
+
+before(){
+
+	#remove old backup kernel modules
+	if [[ -f "${kernel_backup_dir}/VERSION" ]]; then
+		read -r kernel_backup_ver < "${kernel_backup_dir}/VERSION"
+		
+		if [[ -n "${kernel_backup_ver}" && "${kernel_ver}" != "${kernel_backup_ver}" && -d "${kernel_modules_dir}/${kernel_backup_ver}" ]]; then
+				echo "==> remove old backup kernel modules: ${kernel_backup_ver}"
+				rm -rf "${kernel_modules_dir}/${kernel_backup_ver}"
+				echo "" > "${kernel_backup_dir}/VERSION"
+		fi
+	fi
+	
+	# backup using kernel modules
+	while read -r trigger; do
+		kernel_remove_ver=`echo $trigger | cut -d "/" -f 4`
+		
+		if [[ "${kernel_ver}" == "${kernel_remove_ver}" ]]; then
+			if [[ ! -d "${kernel_backup_dir}" ]]; then
+				mkdir ${kernel_backup_dir}
+			fi
+			echo "==> backup using kernel modules: ${kernel_ver}"	
+			cp -alr "${kernel_modules_dir}/${kernel_ver}" "${kernel_backup_dir}"
+			echo "${kernel_ver}" > "${kernel_backup_dir}/VERSION"
+		fi
+		continue
+	done
+}
+
+after(){
+	if [[ -d "${kernel_backup_dir}/${kernel_ver}" && ! -d "${kernel_modules_dir}/${kernel_ver}" ]]; then
+		echo "==> restore using kernel modules: ${kernel_ver}"
+		mv "${kernel_backup_dir}/${kernel_ver}" "${kernel_modules_dir}"
+	fi
+}
+
+
+if [[ "$1" == "before" ]]; then
+	before
+elif [[ "$1" == "after" ]]; then
+	after
+fi

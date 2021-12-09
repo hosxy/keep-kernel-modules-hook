@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Description = Backup using kernel modules...
+When = PreTransaction
+Exec = /usr/share/libalpm/scripts/keep-kernel-modules before
+NeedsTargets
