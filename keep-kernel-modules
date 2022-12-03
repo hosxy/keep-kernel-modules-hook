@@ -6,7 +6,7 @@ kernel_backup_dir="${kernel_modules_dir}/backup"
 
 before(){
 
-	#remove old backup kernel modules
+	# 删除旧的备份内核
 	if [[ -f "${kernel_backup_dir}/VERSION" ]]; then
 		read -r kernel_backup_ver < "${kernel_backup_dir}/VERSION"
 		
@@ -17,23 +17,22 @@ before(){
 		fi
 	fi
 	
-	# backup using kernel modules
-	while read -r trigger; do
-		kernel_remove_ver=`echo $trigger | cut -d "/" -f 4`
-		
-		if [[ "${kernel_ver}" == "${kernel_remove_ver}" ]]; then
-			if [[ ! -d "${kernel_backup_dir}" ]]; then
-				mkdir ${kernel_backup_dir}
-			fi
-			echo "==> backup using kernel modules: ${kernel_ver}"	
-			cp -alr "${kernel_modules_dir}/${kernel_ver}" "${kernel_backup_dir}"
-			echo "${kernel_ver}" > "${kernel_backup_dir}/VERSION"
+	# 备份使用中的内核
+	read -r trigger
+	kernel_remove_ver=`echo $trigger | cut -d "/" -f 4`
+
+	if [[ "${kernel_ver}" == "${kernel_remove_ver}" ]]; then
+		if [[ ! -d "${kernel_backup_dir}" ]]; then
+			mkdir ${kernel_backup_dir}
 		fi
-		continue
-	done
+		echo "==> backup using kernel modules: ${kernel_ver}"
+		cp -alr "${kernel_modules_dir}/${kernel_ver}" "${kernel_backup_dir}"
+		echo "${kernel_ver}" > "${kernel_backup_dir}/VERSION"
+	fi
 }
 
 after(){
+	# 如果存在当前使用内核的备份则恢复
 	if [[ -d "${kernel_backup_dir}/${kernel_ver}" && ! -d "${kernel_modules_dir}/${kernel_ver}" ]]; then
 		echo "==> restore using kernel modules: ${kernel_ver}"
 		mv "${kernel_backup_dir}/${kernel_ver}" "${kernel_modules_dir}"
